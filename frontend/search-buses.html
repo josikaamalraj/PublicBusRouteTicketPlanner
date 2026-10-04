@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Search Buses - BusPlanner</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+
+    <nav>
+        <a class="brand" href="index.html">🚌 BusPlanner</a>
+
+        <div>
+            <a href="passenger-dashboard.html">Dashboard</a>
+            <a href="my-bookings.html">My Bookings</a>
+        </div>
+    </nav>
+
+
+    <main class="container">
+
+        <h1>Search Buses</h1>
+
+        <form id="searchForm" class="searchbar">
+
+            <label>
+                Source
+                <input
+                    type="text"
+                    id="source"
+                    placeholder="Tambaram"
+                    required
+                >
+            </label>
+
+
+            <label>
+                Destination
+                <input
+                    type="text"
+                    id="destination"
+                    placeholder="Broadway"
+                    required
+                >
+            </label>
+
+
+            <label>
+                Travel Date
+                <input
+                    type="date"
+                    id="travelDate"
+                    required
+                >
+            </label>
+
+
+            <button class="btn" type="submit">
+                Search Bus
+            </button>
+
+        </form>
+
+
+        <p id="message" class="message"></p>
+
+
+        <div id="results" class="bus-grid"></div>
+
+    </main>
+
+
+    <script>
+
+        const API_BASE_URL = "http://localhost:8080/api";
+
+
+        document
+            .getElementById("searchForm")
+            .addEventListener("submit", async function(event) {
+
+                event.preventDefault();
+
+
+                const source =
+                    document.getElementById("source").value.trim();
+
+
+                const destination =
+                    document.getElementById("destination").value.trim();
+
+
+                const travelDate =
+                    document.getElementById("travelDate").value;
+
+
+                const message =
+                    document.getElementById("message");
+
+
+                const results =
+                    document.getElementById("results");
+
+
+                results.innerHTML = "";
+
+                message.textContent = "";
+
+
+                if (source.toLowerCase() === destination.toLowerCase()) {
+
+                    message.textContent =
+                        "Source and destination cannot be the same.";
+
+                    return;
+                }
+
+
+                if (!travelDate) {
+
+                    message.textContent =
+                        "Please select a travel date.";
+
+                    return;
+                }
+
+
+                try {
+
+                    const url =
+                        API_BASE_URL +
+                        "/buses/search?source=" +
+                        encodeURIComponent(source) +
+                        "&destination=" +
+                        encodeURIComponent(destination) +
+                        "&travelDate=" +
+                        encodeURIComponent(travelDate);
+
+
+                    const response =
+                        await fetch(url);
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            "Server error: " + response.status
+                        );
+
+                    }
+
+
+                    const data =
+                        await response.json();
+
+
+                    if (data.length === 0) {
+
+                        results.innerHTML = `
+                            <div class="card">
+                                <p>
+                                    No buses found for this route.
+                                </p>
+                            </div>
+                        `;
+
+                        return;
+                    }
+
+
+                    data.forEach(function(bus) {
+
+                        const card =
+                            document.createElement("article");
+
+
+                        card.className = "bus-card";
+
+
+                        card.innerHTML = `
+
+                            <h2>
+                                ${bus.busNumber} · ${bus.busName}
+                            </h2>
+
+                            <div class="bus-meta">
+
+                                <span>
+                                    Route:
+                                    ${bus.source}
+                                    →
+                                    ${bus.destination}
+                                </span>
+
+                                <span>
+                                    Fare:
+                                    ₹${bus.fare}
+                                </span>
+
+                                <span>
+                                    Departure:
+                                    ${bus.departureTime}
+                                </span>
+
+                                <span>
+                                    Arrival:
+                                    ${bus.arrivalTime}
+                                </span>
+
+                                <span>
+                                    Seats:
+                                    ${bus.availableSeats}/${bus.totalSeats}
+                                </span>
+
+                                <span>
+                                    Status:
+                                    ${bus.status}
+                                </span>
+
+                            </div>
+
+
+                            <a
+                                class="btn"
+                                href="bus-details.html?id=${bus.id}&date=${travelDate}"
+                            >
+                                View Details
+                            </a>
+
+
+                            <a
+                                class="btn secondary"
+                                href="booking.html?id=${bus.id}&date=${travelDate}"
+                            >
+                                Book Now
+                            </a>
+
+                        `;
+
+
+                        results.appendChild(card);
+
+                    });
+
+                }
+
+                catch (error) {
+
+                    console.error(error);
+
+
+                    message.textContent =
+                        "Unable to connect to the backend. " +
+                        "Please make sure Spring Boot is running on port 8080.";
+
+                }
+
+            });
+
+    </script>
+
+</body>
+</html>
